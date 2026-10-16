@@ -44,6 +44,8 @@ Load the script in your `.zshrc` by adding the following line:
 [[ -f "$HOME/export-esp.sh" ]] && source "$HOME/export-esp.sh"
 ```
 
+Alternative use `mise.toml` to setup the enviroment variables in the root folder of the project.
+
 ## Other tools
 
 ```sh
