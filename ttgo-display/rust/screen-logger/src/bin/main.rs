@@ -10,12 +10,13 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
+use core::time::Duration;
 use defmt::{error, info};
 use embedded_graphics::geometry::Point;
-use esp_hal::clock::CpuClock;
-use esp_hal::delay::Delay;
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::main;
+use esp_hal::rtc_cntl::Rtc;
+use esp_hal::rtc_cntl::sleep::TimerWakeupSource;
 use esp_println as _;
 use screen_logger::esp_display::{EspDisplay, EspDisplayGpio};
 
@@ -29,23 +30,33 @@ fn panic(panic_info: &core::panic::PanicInfo) -> ! {
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
 
-fn setup() -> EspDisplay<'static> {
-    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
-    let per = esp_hal::init(config);
+struct Bsp {
+    display: EspDisplay<'static>,
+    rtc: Rtc<'static>,
+}
 
-    info!("Setup");
+impl Bsp {
+    fn setup() -> Bsp {
+        let config = esp_hal::Config::default();
+        let per = esp_hal::init(config);
 
-    let display_gpio = EspDisplayGpio {
-        mosi: per.GPIO19.into(),
-        sclk: per.GPIO18.into(),
-        spi: per.SPI2.into(),
-        cs: Output::new(per.GPIO5, Level::High, OutputConfig::default()),
-        dc: Output::new(per.GPIO16, Level::High, OutputConfig::default()),
-        rst: Output::new(per.GPIO23, Level::High, OutputConfig::default()),
-        bl: Output::new(per.GPIO4, Level::High, OutputConfig::default()),
-    };
+        info!("Setup");
 
-    EspDisplay::new(display_gpio)
+        let display_gpio = EspDisplayGpio {
+            mosi: per.GPIO19.into(),
+            sclk: per.GPIO18.into(),
+            spi: per.SPI2.into(),
+            cs: Output::new(per.GPIO5, Level::High, OutputConfig::default()),
+            dc: Output::new(per.GPIO16, Level::High, OutputConfig::default()),
+            rst: Output::new(per.GPIO23, Level::High, OutputConfig::default()),
+            bl: Output::new(per.GPIO4, Level::High, OutputConfig::default()),
+        };
+
+        Self {
+            display: EspDisplay::new(display_gpio),
+            rtc: Rtc::new(per.LPWR),
+        }
+    }
 }
 
 #[allow(
@@ -55,11 +66,18 @@ fn setup() -> EspDisplay<'static> {
 #[main]
 fn main() -> ! {
     info!("Starting ESP");
-    let mut display = setup();
-    let delay = Delay::new();
+    let Bsp {
+        mut display,
+        mut rtc,
+    } = Bsp::setup();
+
+    // Wakeup after 2 seconds
+    let wakeup_source = TimerWakeupSource::new(Duration::from_secs(2).into());
 
     loop {
         display.render("hello", Point::new(0, 20));
-        delay.delay_millis(5000);
+        info!("Going to sleep");
+        // Enter deep sleep with the configured wakeup source
+        rtc.sleep_deep(&[&wakeup_source]);
     }
 }
