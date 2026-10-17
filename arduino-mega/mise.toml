@@ -1,0 +1,7 @@
+[tools]
+"cargo:cargo-generate" = "0.25.0"
+"cargo:ravedude" = "0.2.2"
+
+[env]
+# RUSTUP_TOOLCHAIN = "nightly-2025-04-27"
+RUSTUP_TOOLCHAIN = "nightly-2026-10-16"
