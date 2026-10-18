@@ -65,14 +65,9 @@ where
         Ok(())
     }
 
-    pub fn rotate_degrees(&mut self, degrees: f32) -> Result<(), P1::Error> {
-        let steps = (degrees * STEPS_PER_REVOLUTION as f32) as usize / 360;
-
-        let direction = if steps > 0 {
-            Direction::Clockwise
-        } else {
-            Direction::CounterClockwise
-        };
+    pub fn rotate_degrees(&mut self, degrees: isize) -> Result<(), P1::Error> {
+        let steps: usize = ((degrees as usize * STEPS_PER_REVOLUTION as usize) / 360) as usize;
+        let direction = direction_from_degrees(degrees);
 
         self.step_n(steps, direction)?;
 
@@ -104,11 +99,6 @@ where
         Ok(())
     }
 
-    // step(&mut self, direction): one phase step (half or full, depending on mode). Everything else builds on this.
-    // step_n(&mut self, steps: u32, direction): blocking move of N steps.
-    // rotate_degrees(&mut self, degrees: f32): converts to steps; sign gives direction.
-    // rotate_revolutions(&mut self, revs: f32): same, in output-shaft revolutions.
-
     /// Sets pins 1..4 according to the low nibble in [bits]
     fn set_bits(&mut self, bits: u8) -> Result<(), P1::Error> {
         self.pin_1.set_state((bits & 0b0001 != 0).into())?;
@@ -116,5 +106,25 @@ where
         self.pin_3.set_state((bits & 0b0100 != 0).into())?;
         self.pin_4.set_state((bits & 0b1000 != 0).into())?;
         Ok(())
+    }
+}
+
+const fn direction_from_degrees(degrees: isize) -> Direction {
+    if degrees > 0 {
+        Direction::Clockwise
+    } else {
+        Direction::CounterClockwise
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use supper::*;
+    // enable std only for test
+    // extern crate std;
+
+    #[test]
+    fn test_direction_from_degress() {
+        assert_eq!(direction_from_degrees(0), Clockwise);
     }
 }

@@ -25,29 +25,34 @@ fn main() -> ! {
 
     loop {
         signal_led(&mut led);
-        arduino_hal::delay_ms(2000);
+        arduino_hal::delay_ms(1000);
+
+        led.toggle();
+        step_motor.step_n(300, Direction::Clockwise);
+        led.toggle();
+        arduino_hal::delay_ms(1000);
+
+        led.toggle();
+        step_motor.step_n(300, Direction::CounterClockwise);
+        led.toggle();
+        arduino_hal::delay_ms(1000);
 
         // led.toggle();
-        // step_motor.step_n(2048, Direction::Clockwise);
+        // step_motor.rotate_degrees(-180);
         // led.toggle();
         // arduino_hal::delay_ms(1000);
-        //
-        led.toggle();
-        step_motor.rotate_degrees(-180.0);
-        led.toggle();
-        arduino_hal::delay_ms(1000);
 
-        led.toggle();
-        step_motor.rotate_degrees(90.0);
-        led.toggle();
-        step_motor.off();
-        arduino_hal::delay_ms(1000);
+        // led.toggle();
+        // step_motor.rotate_degrees(90);
+        // led.toggle();
+        // step_motor.off();
+        // arduino_hal::delay_ms(1000);
     }
 }
 
 // LED indicator with 3 bliks
 fn signal_led<P: StatefulOutputPin>(led: &mut P) -> Result<(), P::Error> {
-    for _ in 0..4 {
+    for _ in 0..=6 {
         led.toggle()?;
         arduino_hal::delay_ms(200);
     }
