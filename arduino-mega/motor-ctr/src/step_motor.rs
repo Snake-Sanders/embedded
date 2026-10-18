@@ -66,7 +66,7 @@ where
     }
 
     pub fn rotate_degrees(&mut self, degrees: isize) -> Result<(), P1::Error> {
-        let steps: usize = ((degrees as usize * STEPS_PER_REVOLUTION as usize) / 360) as usize;
+        let steps = steps_from_degrees(degrees);
         let direction = direction_from_degrees(degrees);
 
         self.step_n(steps, direction)?;
@@ -117,14 +117,24 @@ const fn direction_from_degrees(degrees: isize) -> Direction {
     }
 }
 
+const fn steps_from_degrees(degrees: isize) -> usize {
+    (degrees as usize * STEPS_PER_REVOLUTION as usize) / 360
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::step_motor::direction_from_degrees;
+    use crate::step_motor::{direction_from_degrees, Direction};
     use supper::*;
     // enable std only for test
     // extern crate std;
 
     #[test]
     fn test_direction_from_degress() {
-        assert_eq!(direction_from_degrees(0), Clockwise);
+        assert_eq!(direction_from_degrees(0), Direction::Clockwise);
+        assert_eq!(direction_from_degrees(1), Direction::Clockwise);
+        assert_eq!(direction_from_degrees(180), Direction::Clockwise);
+        assert_eq!(direction_from_degrees(-1), Direction::CounterClockwise);
+        assert_eq!(direction_from_degrees(-360), Direction::CounterClockwise);
     }
 }
